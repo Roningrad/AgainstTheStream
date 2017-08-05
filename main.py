@@ -25,9 +25,10 @@ from kivy.storage.jsonstore import JsonStore
 from time import sleep
 from kivy.utils import platform
 
+# Подключаем библиотеки для взаимодействия с Android-устройствами
 if platform() == "android":
-    from jnius import cast
-    from jnius import autoclass
+	from jnius import cast
+	from jnius import autoclass
 
 class Background(Widget):
     image_one = ObjectProperty(Image())
@@ -51,7 +52,7 @@ class Background(Widget):
         self.image_two.pos = (1920, 0)
 
 class Mcnay(Widget):
-    bird_image = ObjectProperty(Image())
+    fish_image = ObjectProperty(Image())
 
     jump_time = NumericProperty(0.3)
     jump_height = NumericProperty(70)
@@ -78,17 +79,17 @@ class Mcnay(Widget):
         self._keyboard = None
 
     def switch_to_normal(self, dt):
-        self.bird_image.source = "images/flappyup.png"
+        self.fish_image.source = "images/fishup.png"
         Clock.schedule_once(self.stop_jumping, self.jump_time  * (4.0 / 5.0))
 
     def stop_jumping(self, dt):
         self.jumping = False
-        self.bird_image.source = "images/flappy.png"
+        self.fish_image.source = "images/fishdown.png"
         self.velocity_y = self.normal_velocity_y
 
     def on_touch_down(self, touch):
         self.jumping = True
-        self.bird_image.source = "images/flappynormal.png"
+        self.fish_image.source = "images/fishnormal.png"
         self.velocity_y = self.jump_height / (self.jump_time * 60.0)
         Clock.unschedule(self.stop_jumping)
         Clock.schedule_once(self.switch_to_normal, self.jump_time  / 5.0)
@@ -98,16 +99,16 @@ class Mcnay(Widget):
 
     def update(self):
         self.pos = Vector(*self.velocity) + self.pos
-        # Если рыба упала на грунт - то ползёт по нему
+        
+		# Если рыба упала на грунт - то ползёт по нему
         if self.pos[1] <= 104:
             Clock.unschedule(self.stop_jumping)
-            self.bird_image.source = "images/flappynormal.png"
+            self.fish_image.source = "images/fishnormal.png"
             self.pos = (self.pos[0], 104)
 
 class Obstacle(Widget):
     obstacle_image = ObjectProperty(Image())
-    gap_top = NumericProperty(0)																					# Позиция отсчитывается снизу
-
+    position = NumericProperty(0)
     velocity_x = NumericProperty(0)
     velocity_y = NumericProperty(0)
     velocity = ReferenceListProperty(velocity_x, velocity_y)
@@ -115,18 +116,19 @@ class Obstacle(Widget):
     marked = BooleanProperty(False)
 
     def __init__(self, **kwargs):
-        super(Obstacle, self).__init__(**kwargs)																	# Можно убрать без негативных последствий
-
+        super(Obstacle, self).__init__(**kwargs)
+	
+	# Задаём случайное расположение новой амёбы от донышка
     def update_position(self):
-        self.gap_top = randint(104, self.height)													# Задаётся случайное расположение нового проёма в трубах
-
+        self.position = randint(104, self.height)
+	
+	# Задаём скорость передвижения амёб
     def update(self):
-        self.pos = Vector(*self.velocity) + self.pos																# Здесь задаётся только перемещение труб
+        self.pos = Vector(*self.velocity) + self.pos
 
 class Skillball(Widget):
     skillball_image = ObjectProperty(Image())
-    gap_top = NumericProperty(0)																					# Позиция отсчитывается снизу
-
+    position = NumericProperty(0)
     velocity_x = NumericProperty(0)
     velocity_y = NumericProperty(0)
     velocity = ReferenceListProperty(velocity_x, velocity_y)
@@ -135,38 +137,48 @@ class Skillball(Widget):
     marked2 = BooleanProperty(False)
 
     def __init__(self, **kwargs):
-        super(Skillball, self).__init__(**kwargs)																	# Можно убрать без негативных последствий
+        super(Skillball, self).__init__(**kwargs)
 
     def update_position(self):
-        self.gap_top = randint(104, self.height)													# Задаётся случайное расположение нового проёма в трубах
+        self.position = randint(104, self.height)
 
     def update(self):
-        self.pos = Vector(*self.velocity) + self.pos																# Здесь задаётся только перемещение труб
+        self.pos = Vector(*self.velocity) + self.pos
 
 class NewGamePopup(ModalView):
     def share(self):
         if platform() == 'android':
             record = 'Мой рекорд в Against the Stream: ' + str(StreamGame.store.get('tito')['inpud']) + ' баллов.'
 
-            PythonActivity = autoclass('org.renpy.android.PythonActivity') #request the Kivy activity instance
-            Intent = autoclass('android.content.Intent') # get the Android Intend class
+            # Запросить экземпляр Kivy activity 
+            PythonActivity = autoclass('org.renpy.android.PythonActivity')
+			
+            # Получить Intend-класс Android
+            Intent = autoclass('android.content.Intent')
 
-            String = autoclass('java.lang.String') # get the Java object
+            # Получить Java-объект
+            String = autoclass('java.lang.String')
 
-            intent = Intent() # create a new Android Intent
-            intent.setAction(Intent.ACTION_SEND) #set the action
+            # Создать запрос на выполнение действия
+            intent = Intent()
+			
+            # Установить действие
+            intent.setAction(Intent.ACTION_SEND)
 
-            # to send a message, it need to be a Java char array. So we use the cast to convert and Java String to a Java Char array
+            # Чтобы отправить сообщение, нам нужен символьный массив Java. Поэтому преобразуем наше сообщение из Java String в массив Java Char
             intent.putExtra(Intent.EXTRA_SUBJECT, cast('java.lang.CharSequence', String('Мой рекорд в Against the Stream'.decode('utf-8'))))
             intent.putExtra(Intent.EXTRA_TEXT, cast('java.lang.CharSequence', String(record.decode('utf-8'))))
 
-            intent.setType('text/plain') #text message
+            # Следующее сообщение
+            intent.setType('text/plain')
 
             currentActivity = cast('android.app.Activity', PythonActivity.mActivity)
-            currentActivity.startActivity(intent) # show the intent in the game activity
+			
+            # Показать действие во время игры
+            currentActivity.startActivity(intent)
 
 class StreamGame(Widget):
-    mcnay = ObjectProperty(Mcnay())
+    fish = ObjectProperty(Mcnay())
     background = ObjectProperty(Background())
     skillballs = ListProperty([])
     obstacles = ListProperty([])
@@ -177,42 +189,45 @@ class StreamGame(Widget):
 
     def __init__(self, **kwargs):
         super(StreamGame, self).__init__(**kwargs)
-        self.mcnay.normal_velocity = [0, -6]
-        self.mcnay.velocity = self.mcnay.normal_velocity
+        self.fish.normal_velocity = [0, -6]
+        self.fish.velocity = self.fish.normal_velocity
         self.background.velocity = [-4, 0]
         self.bind(size=self.size_callback)
 
     def remove_skillball(self):
-        self.remove_widget(self.skillballs[0])																		# Удаляем только первый объект из списка труб
-        self.skillballs = self.skillballs[1:]																			# Обновляем переменную со всеми трубами - присваиваем ей новый список без первой трубы
+        self.remove_widget(self.skillballs[0])
+        self.skillballs = self.skillballs[1:]
 
     def remove_obstacle(self):
-        self.remove_widget(self.obstacles[0])																		# Удаляем только первый объект из списка труб
-        self.obstacles = self.obstacles[1:]																			# Обновляем переменную со всеми трубами - присваиваем ей новый список без первой трубы
+        self.remove_widget(self.obstacles[0])
+        self.obstacles = self.obstacles[1:]
 
     def new_skillball(self, remove=True):
         if remove:
             self.remove_skillball()
-        new_skillball = Skillball()
+        new_skillball = Skillball()		
+		# выводим планктон случайного цвета (из трёх возможных)
         new_skillball.skillball_image.source = "images/score_" + choice(["red", "blue", "green"]) +".png"
-        new_skillball.height = self.height																			# Высота трубы задаётся по высоте экрана
-        new_skillball.x = self.width																					# Ширина задаётся из сопровождающего файла .kv - то есть 30 пикселей
-        new_skillball.update_position()																				# Вызываем метод для создания случайной позиции проёма в трубе
-        new_skillball.velocity = [-6, 0]																				# Задаём скорость трубе
-        self.add_widget(new_skillball)																				# Выводим трубу на экран
-        self.skillballs = self.skillballs + [new_skillball]															# Добавляем в общий список с трубами созданную только что трубу
+        new_skillball.height = self.height
+        new_skillball.x = self.width
+        new_skillball.update_position()		
+		# Задаём скорость планктону
+        new_skillball.velocity = [-6, 0]
+        self.add_widget(new_skillball)
+        self.skillballs = self.skillballs + [new_skillball]
 
     def new_obstacle(self, remove=True):
         if remove:
             self.remove_obstacle()
         new_obstacle = Obstacle()
         new_obstacle.obstacle_image.source = "images/obstacle.png"
-        new_obstacle.height = self.height																			# Высота трубы задаётся по высоте экрана
-        new_obstacle.x = self.width																					# Ширина задаётся из сопровождающего файла .kv - то есть 30 пикселей
-        new_obstacle.update_position()																				# Вызываем метод для создания случайной позиции проёма в трубе
-        new_obstacle.velocity = [-8, 0]																				# Задаём скорость трубе
-        self.add_widget(new_obstacle)																				# Выводим трубу на экран
-        self.obstacles = self.obstacles + [new_obstacle]															# Добавляем в общий список с трубами созданную только что трубу
+        new_obstacle.height = self.height
+        new_obstacle.x = self.width
+        new_obstacle.update_position()		
+		# Задаём скорость амёбе
+        new_obstacle.velocity = [-8, 0]
+        self.add_widget(new_obstacle)
+        self.obstacles = self.obstacles + [new_obstacle]
 
     def size_callback(self, instance, value):
         for skillball in self.skillballs:
@@ -227,7 +242,7 @@ class StreamGame(Widget):
     def reset(self, dt):
         sleep(1)
         self.score = 0
-        self.mcnay.pos = (self.parent.center)
+        self.fish.pos = (self.parent.center)
         for obstacle in self.obstacles:
             self.remove_widget(obstacle)
             self.obstacles = self.obstacles[1:]
@@ -236,56 +251,57 @@ class StreamGame(Widget):
             self.skillballs = self.skillballs[1:]
         Clock.unschedule(self.update)
         Clock.schedule_interval(self.update, 1.0/90.0)
-        Clock.schedule_once(self.mcnay.stop_jumping, self.mcnay.jump_time  * (4.0 / 5.0))
+        Clock.schedule_once(self.fish.stop_jumping, self.fish.jump_time  * (4.0 / 5.0))
         self.background.update_position()
 
     def update(self, dt):
-        self.mcnay.update()
+        self.fish.update()
         self.background.update()
 
         # Циклично создаём планктон. Удаляем то, что ушло за левый край экрана
         for skillball in self.skillballs:
             skillball.update()
             # Как только планктон пройден рыбой - создаём ещё один впереди
-            if skillball.x < self.mcnay.x + self.mcnay.x/2 and not skillball.marked:
+            if skillball.x < self.fish.x + self.fish.x/2 and not skillball.marked:
                 skillball.marked = True
                 self.new_skillball(remove=False)
-        if len(self.skillballs) == 0:																				# Если список с трубами пуст - добавляем в него одну трубу
+        if len(self.skillballs) == 0:
             self.new_skillball(remove=False)
-        elif self.skillballs[0].x < 0:																				# Иначе, если первая труба в списке вышла за левый край - вызываем метод её удаления
+        elif self.skillballs[0].x < 0:
             self.remove_skillball()
 
-        # Циклично создавать трубы. Удалять трубы, которые выходят за левый край экрана.
+        # Циклично создаём амёб. Удаляем то, что ушло за левый край экрана
         for obstacle in self.obstacles:
-            obstacle.update()																						# Вызываем метод для передвижения трубы
-            if obstacle.x < self.mcnay.x and not obstacle.marked:													# Как только труба пройдена птицей - прибавляем одно очко и создаём ещё одну трубу впереди
+            obstacle.update()
+            if obstacle.x < self.fish.x and not obstacle.marked:
                 obstacle.marked = True
                 self.new_obstacle(remove=False)
-        if len(self.obstacles) == 0:																				# Если список с трубами пуст - добавляем в него одну трубу
+        if len(self.obstacles) == 0:
             self.new_obstacle(remove=False)
-        elif self.obstacles[0].x < 0:																				# Иначе, если первая труба в списке вышла за левый край - вызываем метод её удаления
+        elif self.obstacles[0].x < 0:
             self.remove_obstacle()
         
 		# Задаём алгоритм действий при столкновении рыбы с амёбой
         for obstacle in self.obstacles:
-            if self.mcnay.collide_widget(Widget(pos=(obstacle.x - 5, obstacle.gap_top + 30), size=(obstacle.width, 10))):
-                # Если рыба столкнулась с амёбой - выход из приложения
+            if self.fish.collide_widget(Widget(pos=(obstacle.x - 5, obstacle.position + 30), size=(obstacle.width, 10))):
+                # Если рыба столкнулась с амёбой - конец игры и сохранение результатов
                 obstacle.obstacle_image.source = "images/obstacle_shocked.png"
                 Clock.unschedule(self.update)
-                Clock.unschedule(self.mcnay.stop_jumping)
+                Clock.unschedule(self.fish.stop_jumping)
                 self.obstacle_sound.play()
                 if self.score > self.store.get('tito')['inpud']:
                     self.store.put('tito', inpud=self.score)
 
-                # Имеет смысл выделить этот код в отдельную функцию
+                # Вывод результатов игры на экран
                 popup = NewGamePopup()
                 victory_label = Label(text="[color=#000][b]Мой результат в игре\nAgainst the Stream[/b]\nДостигнуто: " + str(self.score) + "\nРекорд: " + str(self.store.get('tito')['inpud']) + "\n\n\n[/color]", markup = True, font_size=30, pos_hint={'top':0.1})
                 popup.add_widget(victory_label)
                 popup.bind(on_dismiss=self.reset)
                 popup.open()
 
+        # Задаём алгоритм действий при поглощении рыбой планктона
         for skillball in self.skillballs:
-            if self.mcnay.collide_widget(Widget(pos=(skillball.x, skillball.gap_top + 20), size=(skillball.width, 14))) and not skillball.marked2:
+            if self.fish.collide_widget(Widget(pos=(skillball.x, skillball.position + 20), size=(skillball.width, 14))) and not skillball.marked2:
                 skillball.marked2 = True
                 self.skill_sound.play()
                 # Если рыба заглотила красный планктон - плюс один балл
