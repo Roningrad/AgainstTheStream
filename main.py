@@ -51,7 +51,7 @@ class Background(Widget):
         self.image_one.pos = (0, 0)
         self.image_two.pos = (1920, 0)
 
-class Mcnay(Widget):
+class Fish(Widget):
     fish_image = ObjectProperty(Image())
 
     jump_time = NumericProperty(0.3)
@@ -69,7 +69,7 @@ class Mcnay(Widget):
     normal_velocity = ReferenceListProperty(normal_velocity_x, normal_velocity_y)
 
     def __init__(self, **kwargs):
-        super(Mcnay, self).__init__(**kwargs)
+        super(Fish, self).__init__(**kwargs)
         if Config.getdefault('input', 'keyboard', False):
             self._keyboard = Window.request_keyboard(self._keyboard_closed, self, 'text')
             self._keyboard.bind(on_key_down=self._on_keyboard_down)
@@ -164,7 +164,7 @@ class NewGamePopup(ModalView):
             currentActivity.startActivity(intent)
 
 class StreamGame(Widget):
-    fish = ObjectProperty(Mcnay())
+    fish = ObjectProperty(Fish())
     background = ObjectProperty(Background())
     skillballs = ListProperty([])
     obstacles = ListProperty([])
