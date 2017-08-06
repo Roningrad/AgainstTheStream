@@ -106,26 +106,6 @@ class Mcnay(Widget):
             self.fish_image.source = "images/fishnormal.png"
             self.pos = (self.pos[0], 104)
 
-class Obstacle(Widget):
-    obstacle_image = ObjectProperty(Image())
-    position = NumericProperty(0)
-    velocity_x = NumericProperty(0)
-    velocity_y = NumericProperty(0)
-    velocity = ReferenceListProperty(velocity_x, velocity_y)
-
-    marked = BooleanProperty(False)
-
-    def __init__(self, **kwargs):
-        super(Obstacle, self).__init__(**kwargs)
-	
-	# Задаём случайное расположение новой амёбы от донышка
-    def update_position(self):
-        self.position = randint(104, self.height)
-	
-	# Задаём скорость передвижения амёб
-    def update(self):
-        self.pos = Vector(*self.velocity) + self.pos
-
 class Skillball(Widget):
     skillball_image = ObjectProperty(Image())
     position = NumericProperty(0)
@@ -144,6 +124,12 @@ class Skillball(Widget):
 
     def update(self):
         self.pos = Vector(*self.velocity) + self.pos
+
+class Obstacle(Skillball):
+    obstacle_image = ObjectProperty(Image())
+
+    def __init__(self, **kwargs):
+        super(Obstacle, self).__init__(**kwargs)
 
 class NewGamePopup(ModalView):
     def share(self):
