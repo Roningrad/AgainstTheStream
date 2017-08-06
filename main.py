@@ -298,7 +298,7 @@ class StreamGame(Widget):
                     self.score -= 1
                 skillball.skillball_image.source = "images/none.png"
 
-class FlappyBirdApp(App):
+class AgainstTheStreamApp(App):
 
     def build(self):
         game = StreamGame()
@@ -310,4 +310,4 @@ class FlappyBirdApp(App):
         return True
 
 if __name__ == "__main__":
-    FlappyBirdApp().run()
+    AgainstTheStreamApp().run()
